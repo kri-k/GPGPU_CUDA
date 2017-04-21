@@ -20,7 +20,7 @@ const ll INF = numeric_limits<ll>::max();
 
 
 __device__ void swap(ll *a, ll *b) {
-    int tmp = *a;
+    ll tmp = *a;
     *a = *b;
     *b = tmp;
 }
