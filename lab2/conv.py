@@ -7,7 +7,15 @@ from PIL import Image
 def coder(in_img_path, alpha=255):
     out_img_path = osp.abspath(in_img_path) + '.bin'
     
-    arr = array('L')
+    arr = None
+    for t in ('H', 'I', 'L'):
+        arr = array(t)
+        if arr.itemsize == 4:
+            break
+        arr = None
+    if arr is None:
+        print("Can't find type code with size equal to 4 bytes")
+        return
 
     im = Image.open(in_img_path)
     w, h = im.size
@@ -56,4 +64,4 @@ def main():
         coder(sys.argv[1])
 
 if __name__ == '__main__':
-	main()
+    main()
