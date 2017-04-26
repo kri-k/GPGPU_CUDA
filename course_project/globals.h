@@ -26,12 +26,12 @@
 #define CSC(call) {cudaError err = call; if(err != cudaSuccess) {fprintf(stderr, "CUDA error in file '%s' in line %i: %s.\n", __FILE__, __LINE__, cudaGetErrorString(err)); exit(1);}} while (0)
 
 #define GLOBAL_INT(name) fscanf(f, "%s", buf); \
-						 fscanf(f, "%d", &name); \
-						 CSC(cudaMemcpyToSymbol(D_ ## name, &name, sizeof(int)))
+                         fscanf(f, "%d", &name); \
+                         CSC(cudaMemcpyToSymbol(D_ ## name, &name, sizeof(int)))
 
 #define GLOBAL_FLOAT(name) fscanf(f, "%s", buf); \
-						   fscanf(f, "%f", &name); \
-						   CSC(cudaMemcpyToSymbol(D_ ## name, &name, sizeof(float)))
+                           fscanf(f, "%f", &name); \
+                           CSC(cudaMemcpyToSymbol(D_ ## name, &name, sizeof(float)))
 
 #define UPDATE_GLOBAL(name, type) CSC(cudaMemcpyToSymbol(D_ ## name, &name, sizeof(type)))
 
@@ -125,96 +125,96 @@ __constant__ float *rawFuncData;
 
 
 void initGlobalVars() {
-	FILE *f = fopen("globals.conf", "r");
-	if (!f) {
-		printf("Cant't open file globals.conf\n");
-		exit(1);
-	}
-	char buf[100];
+    FILE *f = fopen("globals.conf", "r");
+    if (!f) {
+        printf("Cant't open file globals.conf\n");
+        exit(1);
+    }
+    char buf[100];
 
-	GLOBAL_INT(P_NUM);
-	SKIP_LINE;
-	GLOBAL_FLOAT(GEN_X_MIN);
-	GLOBAL_FLOAT(GEN_X_MAX);
-	GLOBAL_FLOAT(GEN_Y_MIN);
-	GLOBAL_FLOAT(GEN_Y_MAX);
-	SKIP_LINE;
-	GLOBAL_FLOAT(X_MIN);
-	GLOBAL_FLOAT(X_MAX);
-	GLOBAL_FLOAT(Y_MIN);
-	GLOBAL_FLOAT(Y_MAX);
-	SKIP_LINE;
-	GLOBAL_FLOAT(MIN_HEAT_VAL);
-	GLOBAL_FLOAT(MAX_HEAT_VAL);
-	SKIP_LINE;
-	GLOBAL_FLOAT(RADIUS);
-	SKIP_LINE;
-	GLOBAL_FLOAT(WEIGHT_LOCAL);
-	GLOBAL_FLOAT(WEIGHT_GLOBAL);
-	GLOBAL_FLOAT(WEIGHT_INERTIA);
-	SKIP_LINE;
-	GLOBAL_INT(BLOCK_NUM_X);
-	GLOBAL_INT(BLOCK_NUM_Y);
-	SKIP_LINE;
-	GLOBAL_FLOAT(FORCE_FACTOR);
-	GLOBAL_FLOAT(FORCE_POW);
-	SKIP_LINE;
-	GLOBAL_FLOAT(TIME_STEP);
+    GLOBAL_INT(P_NUM);
+    SKIP_LINE;
+    GLOBAL_FLOAT(GEN_X_MIN);
+    GLOBAL_FLOAT(GEN_X_MAX);
+    GLOBAL_FLOAT(GEN_Y_MIN);
+    GLOBAL_FLOAT(GEN_Y_MAX);
+    SKIP_LINE;
+    GLOBAL_FLOAT(X_MIN);
+    GLOBAL_FLOAT(X_MAX);
+    GLOBAL_FLOAT(Y_MIN);
+    GLOBAL_FLOAT(Y_MAX);
+    SKIP_LINE;
+    GLOBAL_FLOAT(MIN_HEAT_VAL);
+    GLOBAL_FLOAT(MAX_HEAT_VAL);
+    SKIP_LINE;
+    GLOBAL_FLOAT(RADIUS);
+    SKIP_LINE;
+    GLOBAL_FLOAT(WEIGHT_LOCAL);
+    GLOBAL_FLOAT(WEIGHT_GLOBAL);
+    GLOBAL_FLOAT(WEIGHT_INERTIA);
+    SKIP_LINE;
+    GLOBAL_INT(BLOCK_NUM_X);
+    GLOBAL_INT(BLOCK_NUM_Y);
+    SKIP_LINE;
+    GLOBAL_FLOAT(FORCE_FACTOR);
+    GLOBAL_FLOAT(FORCE_POW);
+    SKIP_LINE;
+    GLOBAL_FLOAT(TIME_STEP);
 
-	fclose(f);
+    fclose(f);
 
-	CSC(cudaMemcpyToSymbol(D_X_CENTER, &X_CENTER, sizeof(float)));
-	CSC(cudaMemcpyToSymbol(D_Y_CENTER, &Y_CENTER, sizeof(float)));
-	CSC(cudaMemcpyToSymbol(D_DELTA, &DELTA, sizeof(float)));
+    CSC(cudaMemcpyToSymbol(D_X_CENTER, &X_CENTER, sizeof(float)));
+    CSC(cudaMemcpyToSymbol(D_Y_CENTER, &Y_CENTER, sizeof(float)));
+    CSC(cudaMemcpyToSymbol(D_DELTA, &DELTA, sizeof(float)));
 }
 
 
 void createInitGlobalArrays() {
-	srand(time(0));
-	float2 *p = new float2[P_NUM];
-	float2 *v = new float2[P_NUM];
+    srand(time(0));
+    float2 *p = new float2[P_NUM];
+    float2 *v = new float2[P_NUM];
 
-	for (int i = 0; i < P_NUM; i++) {
-		p[i].x = ((float)rand() / (float)(RAND_MAX)) * (GEN_X_MAX - GEN_X_MIN) + GEN_X_MIN;
-		p[i].y = ((float)rand() / (float)(RAND_MAX)) * (GEN_Y_MAX - GEN_Y_MIN) + GEN_Y_MIN;
-		v[i] = make_float2(0, 0);
-	}
+    for (int i = 0; i < P_NUM; i++) {
+        p[i].x = ((float)rand() / (float)(RAND_MAX)) * (GEN_X_MAX - GEN_X_MIN) + GEN_X_MIN;
+        p[i].y = ((float)rand() / (float)(RAND_MAX)) * (GEN_Y_MAX - GEN_Y_MIN) + GEN_Y_MIN;
+        v[i] = make_float2(0, 0);
+    }
 
-	void *tmp;
+    void *tmp;
 
-	CSC(cudaMalloc(&tmp, sizeof(float2) * P_NUM));
-	CSC(cudaMemcpy(tmp, p, sizeof(float2) * P_NUM, cudaMemcpyHostToDevice));
-	CSC(cudaMemcpyToSymbol(points, &tmp, sizeof(float2*)));
-	delete[] p;
+    CSC(cudaMalloc(&tmp, sizeof(float2) * P_NUM));
+    CSC(cudaMemcpy(tmp, p, sizeof(float2) * P_NUM, cudaMemcpyHostToDevice));
+    CSC(cudaMemcpyToSymbol(points, &tmp, sizeof(float2*)));
+    delete[] p;
 
-	CSC(cudaMalloc(&tmp, sizeof(float2) * P_NUM));
-	CSC(cudaMemcpy(tmp, v, sizeof(float2) * P_NUM, cudaMemcpyHostToDevice));
-	CSC(cudaMemcpyToSymbol(velocity, &tmp, sizeof(float2*)));
-	delete[] v;
+    CSC(cudaMalloc(&tmp, sizeof(float2) * P_NUM));
+    CSC(cudaMemcpy(tmp, v, sizeof(float2) * P_NUM, cudaMemcpyHostToDevice));
+    CSC(cudaMemcpyToSymbol(velocity, &tmp, sizeof(float2*)));
+    delete[] v;
 
-	CSC(cudaMalloc(&tmp, sizeof(float3) * P_NUM));
-	CSC(cudaMemcpyToSymbol(localBest, &tmp, sizeof(float3*)));
+    CSC(cudaMalloc(&tmp, sizeof(float3) * P_NUM));
+    CSC(cudaMemcpyToSymbol(localBest, &tmp, sizeof(float3*)));
 
-	int lastElem = P_NUM;
-	CSC(cudaMalloc(&tmp, sizeof(int) * (BLOCK_NUM_X * BLOCK_NUM_Y + 1)));
-	CSC(cudaMemcpy((int*)tmp + BLOCK_NUM_X * BLOCK_NUM_Y, &lastElem, sizeof(int), cudaMemcpyHostToDevice));
-	CSC(cudaMemcpyToSymbol(blockPrefixSum, &tmp, sizeof(int*)));
+    int lastElem = P_NUM;
+    CSC(cudaMalloc(&tmp, sizeof(int) * (BLOCK_NUM_X * BLOCK_NUM_Y + 1)));
+    CSC(cudaMemcpy((int*)tmp + BLOCK_NUM_X * BLOCK_NUM_Y, &lastElem, sizeof(int), cudaMemcpyHostToDevice));
+    CSC(cudaMemcpyToSymbol(blockPrefixSum, &tmp, sizeof(int*)));
 
-	CSC(cudaMalloc(&tmp, sizeof(float) * WIDTH * HEIGHT));
-	CSC(cudaMemcpyToSymbol(rawFuncData, &tmp, sizeof(float*)));
+    CSC(cudaMalloc(&tmp, sizeof(float) * WIDTH * HEIGHT));
+    CSC(cudaMemcpyToSymbol(rawFuncData, &tmp, sizeof(float*)));
 }
 
 
 void deleteGlobalArrays() {
-	void *ptr;
-	cudaMemcpyFromSymbol(&ptr, points, sizeof(float2*));
-	CSC(cudaFree(ptr));
-	cudaMemcpyFromSymbol(&ptr, velocity, sizeof(float2*));
-	CSC(cudaFree(ptr));
-	cudaMemcpyFromSymbol(&ptr, localBest, sizeof(float3*));
-	CSC(cudaFree(ptr));
-	cudaMemcpyFromSymbol(&ptr, blockPrefixSum, sizeof(int*));
-	CSC(cudaFree(ptr));
-	cudaMemcpyFromSymbol(&ptr, rawFuncData, sizeof(float*));
-	CSC(cudaFree(ptr));
+    void *ptr;
+    cudaMemcpyFromSymbol(&ptr, points, sizeof(float2*));
+    CSC(cudaFree(ptr));
+    cudaMemcpyFromSymbol(&ptr, velocity, sizeof(float2*));
+    CSC(cudaFree(ptr));
+    cudaMemcpyFromSymbol(&ptr, localBest, sizeof(float3*));
+    CSC(cudaFree(ptr));
+    cudaMemcpyFromSymbol(&ptr, blockPrefixSum, sizeof(int*));
+    CSC(cudaFree(ptr));
+    cudaMemcpyFromSymbol(&ptr, rawFuncData, sizeof(float*));
+    CSC(cudaFree(ptr));
 }
