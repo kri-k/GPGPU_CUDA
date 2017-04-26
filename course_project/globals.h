@@ -77,6 +77,8 @@ int BLOCK_NUM_Y;
 float FORCE_FACTOR;
 float FORCE_POW;
 
+float TIME_STEP;
+
 __constant__ int D_P_NUM;
 
 __constant__ float D_GEN_X_MIN;
@@ -103,6 +105,8 @@ __constant__ int D_BLOCK_NUM_Y;
 
 __constant__ float D_FORCE_FACTOR;
 __constant__ float D_FORCE_POW;
+
+__constant__ float D_TIME_STEP;
 
 float X_CENTER = 0;
 float Y_CENTER = 0;
@@ -154,6 +158,8 @@ void initGlobalVars() {
 	SKIP_LINE;
 	GLOBAL_FLOAT(FORCE_FACTOR);
 	GLOBAL_FLOAT(FORCE_POW);
+	SKIP_LINE;
+	GLOBAL_FLOAT(TIME_STEP);
 
 	fclose(f);
 

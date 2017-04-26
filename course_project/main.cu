@@ -179,7 +179,7 @@ __global__ void processPoints(unsigned long long seed, float weightDecr) {
 		rGy = curand_uniform(&s);
 		curBlock = pointToBlockNum(points[p]);
 
-		float dt = 0.02;
+		float dt = D_TIME_STEP;
 
 		velocity[p].x = D_WEIGHT_INERTIA * velocity[p].x +
 			(D_WEIGHT_LOCAL * weightDecr * rLx * (localBest[p].x - points[p].x) +
