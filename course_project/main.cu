@@ -116,9 +116,10 @@ __global__ void updateLocalExtremums() {
     int offsetx = blockDim.x * gridDim.x;
     float fVal;
     for (int p = idx; p < D_P_NUM; p += offsetx) {
+        int realP = pointsIndexes[p];
         fVal = fun(points[p]);
-        if (fVal < localBest[p].z) {
-            localBest[p] = make_float3(points[p].x, points[p].y, fVal);
+        if (fVal < localBest[realP].z) {
+            localBest[realP] = make_float3(points[p].x, points[p].y, fVal);
         }
     }
 }
@@ -173,6 +174,8 @@ __global__ void processPoints(unsigned long long seed, float weightDecr) {
     float2 blockForce;
 
     for (int p = idx; p < D_P_NUM; p += offsetx) {
+        int realP = pointsIndexes[p];
+
         rLx = curand_uniform(&s);
         rGx = curand_uniform(&s);
         rLy = curand_uniform(&s);
@@ -181,23 +184,23 @@ __global__ void processPoints(unsigned long long seed, float weightDecr) {
 
         float dt = D_TIME_STEP;
 
-        velocity[p].x = D_WEIGHT_INERTIA * velocity[p].x +
-            (D_WEIGHT_LOCAL * weightDecr * rLx * (localBest[p].x - points[p].x) +
+        velocity[realP].x = D_WEIGHT_INERTIA * velocity[realP].x +
+            (D_WEIGHT_LOCAL * weightDecr * rLx * (localBest[realP].x - points[p].x) +
             D_WEIGHT_GLOBAL * weightDecr * rGx * (globalBest.x - points[p].x)) * dt;
-        velocity[p].y = D_WEIGHT_INERTIA * velocity[p].y +
-            (D_WEIGHT_LOCAL * weightDecr * rLy * (localBest[p].y - points[p].y) +
+        velocity[realP].y = D_WEIGHT_INERTIA * velocity[realP].y +
+            (D_WEIGHT_LOCAL * weightDecr * rLy * (localBest[realP].y - points[p].y) +
             D_WEIGHT_GLOBAL * weightDecr * rGy * (globalBest.y - points[p].y)) * dt;
 
         for (int deltaRow = -1; deltaRow < 2; deltaRow++) {
             for (int deltaCol = -1; deltaCol < 2; deltaCol++) {
                 blockForce = forceFromBlock(curBlock + deltaRow * D_BLOCK_NUM_X + deltaCol, p);
-                velocity[p].x += blockForce.x * dt;
-                velocity[p].y += blockForce.y * dt;
+                velocity[realP].x += blockForce.x * dt;
+                velocity[realP].y += blockForce.y * dt;
             }
         }
 
-        points[p].x += velocity[p].x * dt;
-        points[p].y += velocity[p].y * dt;
+        points[p].x += velocity[realP].x * dt;
+        points[p].y += velocity[realP].y * dt;
         points[p].x = min(max(D_X_MIN, points[p].x), D_X_MAX);
         points[p].y = min(max(D_Y_MIN, points[p].y), D_Y_MAX);
     }
@@ -220,6 +223,7 @@ __global__ void buildBlocksHistogram(){
 
 void sortPointsToBlocks() {
     void *tmp;
+    void *tmp2;
 
     cudaMemcpyFromSymbol(&tmp, blockPrefixSum, sizeof(int*));
     thrust::device_ptr<int> devBlockPSum = thrust::device_pointer_cast((int*)tmp);
@@ -232,7 +236,11 @@ void sortPointsToBlocks() {
 
     cudaMemcpyFromSymbol(&tmp, points, sizeof(float2*));
     thrust::device_ptr<float2> devPtrPoints = thrust::device_pointer_cast((float2*)tmp);
-    thrust::sort(devPtrPoints, devPtrPoints + P_NUM, comparePoints());
+
+    cudaMemcpyFromSymbol(&tmp2, pointsIndexes, sizeof(int*));
+    thrust::device_ptr<int> devPtrPointsIndexes = thrust::device_pointer_cast((int*)tmp2);
+
+    thrust::sort_by_key(devPtrPoints, devPtrPoints + P_NUM, devPtrPointsIndexes, comparePoints());
 }
 
 void updateCenter() {

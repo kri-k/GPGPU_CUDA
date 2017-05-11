@@ -117,6 +117,7 @@ __constant__ float D_Y_CENTER;
 __constant__ float D_DELTA;
 
 __constant__ float2 *points;
+__constant__ int *pointsIndexes;
 __constant__ float2 *velocity;
 __constant__ float3 *localBest;
 __constant__ float3 globalBest;
@@ -173,11 +174,13 @@ void createInitGlobalArrays() {
     srand(time(0));
     float2 *p = new float2[P_NUM];
     float2 *v = new float2[P_NUM];
+    int *indx = new int[P_NUM];
 
     for (int i = 0; i < P_NUM; i++) {
         p[i].x = ((float)rand() / (float)(RAND_MAX)) * (GEN_X_MAX - GEN_X_MIN) + GEN_X_MIN;
         p[i].y = ((float)rand() / (float)(RAND_MAX)) * (GEN_Y_MAX - GEN_Y_MIN) + GEN_Y_MIN;
         v[i] = make_float2(0, 0);
+        indx[i] = i;
     }
 
     void *tmp;
@@ -191,6 +194,11 @@ void createInitGlobalArrays() {
     CSC(cudaMemcpy(tmp, v, sizeof(float2) * P_NUM, cudaMemcpyHostToDevice));
     CSC(cudaMemcpyToSymbol(velocity, &tmp, sizeof(float2*)));
     delete[] v;
+
+    CSC(cudaMalloc(&tmp, sizeof(int) * P_NUM));
+    CSC(cudaMemcpy(tmp, indx, sizeof(int) * P_NUM, cudaMemcpyHostToDevice));
+    CSC(cudaMemcpyToSymbol(pointsIndexes, &tmp, sizeof(int*)));
+    delete[] indx;
 
     CSC(cudaMalloc(&tmp, sizeof(float3) * P_NUM));
     CSC(cudaMemcpyToSymbol(localBest, &tmp, sizeof(float3*)));
